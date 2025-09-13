@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TTS Test Client</title>
+</head>
+<body>
+    <h2>Create Speaker Profile</h2>
+    <input type="file" id="audioFile">
+    <input type="text" id="speakerId" placeholder="Speaker ID">
+    <input type="text" id="refText" placeholder="Reference Text">
+    <button onclick="createProfile()">Create Profile</button>
+
+    <h2>Synthesize</h2>
+    <input type="text" id="synthText" placeholder="Text to Synthesize">
+    <button onclick="synthesize()">Synthesize</button>
+
+    <script>
+    const server = "http://35.200.228.189:8009";
+
+    async function createProfile() {
+        const file = document.getElementById("audioFile").files[0];
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const audioB64 = reader.result.split(",")[1];
+            const payload = {
+                speaker_id: document.getElementById("speakerId").value,
+                reference_audio: audioB64,
+                reference_text: document.getElementById("refText").value,
+                user_id: "web_user"
+            };
+            const res = await fetch(`${server}/create_profile`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            alert(JSON.stringify(data));
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function synthesize() {
+        const payload = {
+            text: document.getElementById("synthText").value,
+            speaker_id: document.getElementById("speakerId").value,
+            language_id: "en",
+            exaggeration: 0.5,
+            user_id: "web_user"
+        };
+        const res = await fetch(`${server}/synthesize`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "output.wav";
+        a.click();
+    }
+    </script>
+</body>
+</html>
